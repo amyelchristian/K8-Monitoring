@@ -19,6 +19,7 @@ so "80% of one core" can never fire — "80% of the pod's limit" is the real
 saturation signal. See the README/notes for why.
 """
 
+import json
 import os
 import sys
 import time
@@ -26,7 +27,9 @@ from datetime import datetime
 
 # ---- tunables ---------------------------------------------------------------
 POLL_SECONDS = 1.0
-# Proactive thresholds, as a fraction of each pod's cgroup CPU limit.
+# Proactive thresholds, as a fraction of each pod's cgroup CPU limit. These are the
+# DEFAULTS; they are overridden at runtime from config.json (dashboard settings),
+# which stores percentages — see load_thresholds().
 CPU_WARN_FRACTION = 0.60              # WARNING: climbing
 CPU_CRIT_FRACTION = 0.85             # CRITICAL: near limit
 # Memory thresholds as a fraction of each pod's OWN memory limit. ~60%/85% of a
@@ -38,6 +41,29 @@ ALERT_COOLDOWN_SECONDS = 10           # don't repeat an alert for same cgroup+ki
 STABLE_CYCLES_BEFORE_WATCH = 2        # ignore very short-lived procs for crashes
 CGROUP_ROOT = "/sys/fs/cgroup"
 CLK_TCK = os.sysconf("SC_CLK_TCK") if hasattr(os, "sysconf") else 100
+
+# config.json lives next to this script. The dashboard backend `minikube cp`s it
+# into the node on every settings save, so changing a slider re-tunes the snitch
+# without a restart (picked up on the next CONFIG_REFRESH_CYCLES boundary).
+CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
+CONFIG_REFRESH_CYCLES = 10           # re-read config.json every N polls
+
+
+def load_thresholds():
+    """Read the four threshold percentages from config.json and return them as
+    cgroup fractions. Falls back to the module defaults on any error."""
+    cw, cc = CPU_WARN_FRACTION, CPU_CRIT_FRACTION
+    mw, mc = MEM_WARN_FRACTION, MEM_CRIT_FRACTION
+    try:
+        with open(CONFIG_FILE) as f:
+            cfg = json.load(f)
+        cw = float(cfg.get("cpu_warning", cw * 100)) / 100.0
+        cc = float(cfg.get("cpu_critical", cc * 100)) / 100.0
+        mw = float(cfg.get("memory_warning", mw * 100)) / 100.0
+        mc = float(cfg.get("memory_critical", mc * 100)) / 100.0
+    except (json.JSONDecodeError, OSError, ValueError, TypeError):
+        pass
+    return cw, cc, mw, mc
 
 
 def ts():
@@ -240,8 +266,10 @@ def try_init_bcc():
 def main():
     bpf = try_init_bcc()
     backend = "eBPF (bcc)" if bpf else "/proc polling (fallback)"
+    # Live thresholds (cgroup fractions), refreshed from config.json during the loop.
+    cpu_warn, cpu_crit, mem_warn, mem_crit = load_thresholds()
     print(f"[eBPF-Swarm Snitch] backend = {backend}", flush=True)
-    print(f"[eBPF-Swarm Snitch] PROACTIVE mode: WARNING>{int(CPU_WARN_FRACTION*100)}% / CRITICAL>{int(CPU_CRIT_FRACTION*100)}% "
+    print(f"[eBPF-Swarm Snitch] PROACTIVE mode: WARNING>{int(cpu_warn*100)}% / CRITICAL>{int(cpu_crit*100)}% "
           f"of each pod's CPU+MEM limit; poll {POLL_SECONDS}s", flush=True)
     print("[eBPF-Swarm Snitch] Ctrl+C to stop.", flush=True)
     print("", flush=True)
@@ -260,9 +288,21 @@ def main():
     cg_cpu_hist = {}           # cgroup_rel -> [recent cpu fractions]
     cg_mem_hist = {}           # cgroup_rel -> [recent memory MiB]
     prev_loop_start = None     # monotonic time of the previous cycle
+    poll_count = 0
 
     while True:
         loop_start = time.monotonic()
+
+        # Re-read dashboard thresholds periodically so slider changes apply live.
+        poll_count += 1
+        if poll_count % CONFIG_REFRESH_CYCLES == 0:
+            new = load_thresholds()
+            if new != (cpu_warn, cpu_crit, mem_warn, mem_crit):
+                cpu_warn, cpu_crit, mem_warn, mem_crit = new
+                print(f"[eBPF-Swarm Snitch] thresholds updated → "
+                      f"CPU {int(cpu_warn*100)}/{int(cpu_crit*100)}%  "
+                      f"MEM {int(mem_warn*100)}/{int(mem_crit*100)}%", flush=True)
+
         if bpf:
             bpf.perf_buffer_poll(timeout=0)
 
@@ -315,11 +355,11 @@ def main():
                 hist.append(frac)
                 del hist[:-3]
                 trend = trend_of(hist)
-                if frac >= CPU_CRIT_FRACTION and cooled(rel, "cpu"):
+                if frac >= cpu_crit and cooled(rel, "cpu"):
                     cg_last_alert[(rel, "cpu")] = now
                     emit_cpu_critical(name, top_pid, frac * 100.0,
                                       "rising fast" if trend == "rising" else trend)
-                elif frac >= CPU_WARN_FRACTION and cooled(rel, "cpu"):
+                elif frac >= cpu_warn and cooled(rel, "cpu"):
                     cg_last_alert[(rel, "cpu")] = now
                     emit_cpu_warning(name, top_pid, frac * 100.0, trend)
 
@@ -332,11 +372,11 @@ def main():
                 mhist.append(mem_mi)
                 del mhist[:-3]
                 mtrend = trend_of(mhist)
-                if mfrac >= MEM_CRIT_FRACTION and cooled(rel, "mem"):
+                if mfrac >= mem_crit and cooled(rel, "mem"):
                     cg_last_alert[(rel, "mem")] = now
                     emit_mem_critical(name, top_pid, mem_mi,
                                       "rising fast" if mtrend == "rising" else mtrend)
-                elif mfrac >= MEM_WARN_FRACTION and cooled(rel, "mem"):
+                elif mfrac >= mem_warn and cooled(rel, "mem"):
                     cg_last_alert[(rel, "mem")] = now
                     emit_mem_warning(name, top_pid, mem_mi, mtrend)
 

@@ -28,9 +28,18 @@ import sys
 import time
 from datetime import datetime, timedelta, timezone
 
+# Load .env automatically (no manual `export` needed). Optional dependency:
+# if python-dotenv isn't installed, we fall back to the ambient environment.
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 # ---- config ----------------------------------------------------------------
 BASE_URL = "https://integrate.api.nvidia.com/v1"
-MODEL = os.environ.get("NVIDIA_MODEL", "nvidia/nemotron-3-ultra-550b-a55b")
+MODEL = os.environ.get("NVIDIA_MODEL", "meta/llama-3.1-70b-instruct")
+NVIDIA_TIMEOUT = int(os.environ.get("NVIDIA_TIMEOUT", "20"))
 DIAGNOSES_FILE = os.environ.get("DIAGNOSES_FILE", "diagnoses.log")
 FRESH_SECONDS = 60
 KUBECTL_TIMEOUT = 30
@@ -53,6 +62,47 @@ FAST_PATH_RULES = {
     },
 }
 last_action = {}  # pod_name -> monotonic time of last heal
+
+# Structured events for the dashboard (swarm_events.json). The emitter is SILENT
+# (no stdout) so the swarm's normal logging/test output is unchanged; the dashboard
+# API tails swarm_events.json and streams it over SSE.
+EVENTS_FILE = os.environ.get("EVENTS_FILE", "swarm_events.json")
+
+
+class EventEmitter:
+    def __init__(self, events_file=EVENTS_FILE):
+        self.events_file = events_file
+        self.events = []
+        # Globally-unique, monotonically increasing event ids. The dashboard dedups
+        # events by id (and remembers heal ids for the whole session), so ids must
+        # NEVER repeat across incidents. clear() wipes the per-incident list but must
+        # NOT reset this counter, or the browser would drop every heal after the
+        # first. Seeded from wall-clock ms so a freshly-started swarm process (e.g. a
+        # browser-restarted pipeline) doesn't collide with ids already seen.
+        self._next_id = int(time.time() * 1000)
+
+    def clear(self):
+        self.events = []
+        self._flush()
+
+    def emit(self, event_type, agent, content, **kwargs):
+        self._next_id += 1
+        self.events.append({
+            "id": self._next_id,
+            "timestamp": datetime.now().isoformat(timespec="seconds"),
+            "type": event_type, "agent": agent, "content": content, **kwargs,
+        })
+        self._flush()
+
+    def _flush(self):
+        try:
+            with open(self.events_file, "w", encoding="utf-8") as f:
+                json.dump(self.events, f, indent=2)
+        except OSError:
+            pass
+
+
+emitter = EventEmitter()
 
 PLANNER_SYS = """You are a Senior SRE engineer managing a Kubernetes cluster.
 You will receive a JSON diagnosis of a problem.
@@ -104,6 +154,7 @@ def _raw_llm(system_prompt, user_prompt):
         temperature=0.1,
         max_tokens=512,
         stream=False,
+        timeout=NVIDIA_TIMEOUT,
     )
     return resp.choices[0].message.content or ""
 
@@ -203,16 +254,20 @@ def executor(decision):
 
     timing["fired"] = time.monotonic()
     print(f"[Executor] Executing: kubectl {' '.join(cmd)}", flush=True)
+    emitter.emit("executing", "executor", f"kubectl {' '.join(cmd)}", command=" ".join(cmd))
     try:
         res = _kubectl(cmd)
     except subprocess.TimeoutExpired:
         print("[Executor] kubectl timed out.", flush=True)
+        emitter.emit("error", "executor", "kubectl timed out.")
         return False, timing
     timing["deleted"] = time.monotonic()
     out = (res.stdout or res.stderr).strip()
     print(f"[Executor] Command output: {out}", flush=True)
+    emitter.emit("command_output", "executor", out)
     if res.returncode != 0:
         print("[Executor] command failed; no recovery to verify.", flush=True)
+        emitter.emit("error", "executor", "Command failed; no recovery to verify.")
         return False, timing
     print(f"[Executor] Pod restarted in {timing['deleted'] - timing['fired']:.1f}s", flush=True)
     print("[Executor] Action complete. Kubernetes will recreate the pod.", flush=True)
@@ -221,6 +276,7 @@ def executor(decision):
         return True, timing
 
     # poll for the fresh pod to be Running (accurate timing, no fixed sleep)
+    emitter.emit("verifying", "executor", "Verifying recovery — waiting for a fresh Running pod...")
     for _ in range(25):
         try:
             chk = _kubectl(["get", "pods", "-l", "app=victim-app", "-n", namespace,
@@ -231,9 +287,11 @@ def executor(decision):
         if any(ln.strip().endswith("Running") for ln in chk.stdout.splitlines()):
             timing["running"] = time.monotonic()
             print("[Executor] Verification: pod is Running again ✓", flush=True)
+            emitter.emit("verified", "executor", "Pod is Running again ✓")
             return True, timing
         time.sleep(1)
     print("[Executor] Verification: pod not Running yet.", flush=True)
+    emitter.emit("failed", "executor", "Recovery verification failed.", success=False)
     return False, timing
 
 
@@ -305,17 +363,34 @@ def run_swarm(diagnosis, received_dt, received_mono):
     pod = diagnosis.get("root_cause", "?")
     namespace = diagnosis.get("namespace", "default")
 
+    # Pull the latest dashboard settings so cooldown / model / timeout apply live
+    # (no restart needed). Falls back to current globals if config.json is absent.
+    try:
+        from config_store import load_config
+        _cfg = load_config()
+        global COOLDOWN_SECONDS, MODEL, NVIDIA_TIMEOUT
+        COOLDOWN_SECONDS = int(_cfg.get("cooldown", COOLDOWN_SECONDS))
+        MODEL = str(_cfg.get("llm_model", MODEL))
+        NVIDIA_TIMEOUT = int(_cfg.get("llm_timeout", NVIDIA_TIMEOUT))
+    except Exception:
+        pass
+
+    emitter.clear()  # fresh event stream per incident (for the dashboard)
     print("=" * 40, flush=True)
     print("[Swarm] New diagnosis received!", flush=True)
     print(f"[Swarm] Metric: {metric} | Pod: {pod} | Urgency: {urgency}", flush=True)
     print("[Swarm] Starting agent pipeline...", flush=True)
     print("=" * 40, flush=True)
+    emitter.emit("incident", "system", f"New incident: {metric} on {pod}",
+                 metric=metric, pod=pod, severity=diagnosis.get("severity", "critical"))
 
     # cooldown: don't restart the same pod within COOLDOWN_SECONDS
     last = last_action.get(pod, 0)
     remaining = COOLDOWN_SECONDS - (time.monotonic() - last)
     if last and remaining > 0:
-        print(f"[Swarm] Pod {pod} on cooldown ({int(remaining)}s remaining). Skipping.", flush=True)
+        msg = f"Pod {pod} on cooldown ({int(remaining)}s remaining). Skipping."
+        print(f"[Swarm] {msg}", flush=True)
+        emitter.emit("cooldown", "system", msg, pod=pod)
         return
 
     # --- routing: fast path (no LLM) vs full LLM pipeline ---
@@ -326,12 +401,32 @@ def run_swarm(diagnosis, received_dt, received_mono):
         decision = {"action": rule["action"], "target": pod,
                     "namespace": namespace, "urgency": urgency,
                     "reason": f"rule-based {rule['action']} for {metric}"}
+        emitter.emit("agent_start", "planner",
+                     f"⚡ Fast-path rule matched for {metric}. Skipping LLM; selecting rule-based remediation.",
+                     pod=pod, metric=metric)
+        emitter.emit("decision", "planner", f"Decision: {rule['action']} on {pod}",
+                     action=rule["action"], target=pod, urgency=urgency,
+                     reason=decision["reason"])
+        emitter.emit("evaluation", "evaluator",
+                     "Known-safe pattern (non-system namespace, bounded action) — auto-approved by fast-path policy.",
+                     approved=True, risk_level="low")
         fast = True
     else:
+        emitter.emit("agent_start", "planner",
+                     f"SRE Planner investigating {metric} on {pod} via LLM...", pod=pod, metric=metric)
         decision = planner(diagnosis)
         if not decision:
+            emitter.emit("error", "planner", "Could not produce a valid decision.")
             return
-        if not evaluator(decision):
+        emitter.emit("decision", "planner",
+                     f"Decision: {decision.get('action')} on {decision.get('target')}",
+                     action=decision.get("action"), target=decision.get("target"),
+                     reason=decision.get("reason", ""))
+        approved = evaluator(decision)
+        emitter.emit("evaluation", "evaluator",
+                     "Action approved." if approved else "Action BLOCKED by auditor.",
+                     approved=approved, risk_level="low" if approved else "high")
+        if not approved:
             return
         fast = False
 
@@ -339,15 +434,24 @@ def run_swarm(diagnosis, received_dt, received_mono):
     ok, timing = executor(decision)
     timing["received_mono"] = received_mono
     if ok:
+        total = int(round(timing["running"] - received_mono)) if timing.get("running") is not None else None
         if fast:
             print("[Swarm] ✓ PROACTIVE healing complete! Pod restarted BEFORE crash.", flush=True)
+            heal_msg = "PROACTIVE healing complete! Pod restarted BEFORE crash."
         else:
             print("[Swarm] ✓ Self-healing complete!", flush=True)
-        if timing.get("running") is not None:
-            print(f"[Swarm] Time to fix: {int(round(timing['running'] - received_mono))}s", flush=True)
+            heal_msg = "Self-healing complete!"
+        if total is not None:
+            print(f"[Swarm] Time to fix: {total}s", flush=True)
         print_timing(diagnosis, received_dt, timing)
+        emitter.emit("healed", "system", heal_msg, pod=pod,
+                     total_heal_time=(f"{total}s" if total is not None else None))
         print("[Swarm] Waiting for next alert...", flush=True)
         print("=" * 40, flush=True)
+
+
+# Alias used by dashboard_api.py (same 3-arg signature as run_swarm).
+run_swarm_pipeline = run_swarm
 
 
 def handle_line(line):

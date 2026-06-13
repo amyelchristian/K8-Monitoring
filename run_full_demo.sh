@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Auto-load environment from .env (no manual `export` needed).
+__envdir="$(cd "$(dirname "$0")" && pwd)"; [ -f "$__envdir/.env" ] && { set -a; . "$__envdir/.env"; set +a; }
 #
 # run_full_demo.sh — live Phase 2 -> 3 -> 4 self-healing demo.
 # Needs NVIDIA_API_KEY and the openai package.
@@ -7,6 +9,14 @@
 
 cd "$(dirname "$0")"
 REMOTE=/home/docker/ebpf_monitor.py
+
+# Launch the dashboard (API on :5000, Vite UI on :5173) in the background.
+if [ -f ./start_dashboard.sh ]; then
+  echo "Starting dashboard (UI http://localhost:5173, API http://localhost:5000)"
+  ./start_dashboard.sh &
+  sleep 3
+  echo "Open http://localhost:5173 in your browser!"
+fi
 
 echo "🔥 eBPF-Swarm PROACTIVE Full Demo Starting..."
 echo "Phase 2 (Snitch) → Phase 3 (Brain) → Phase 4 (Swarm)"

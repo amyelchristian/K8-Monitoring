@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Auto-load environment from .env (no manual `export` needed).
+__envdir="$(cd "$(dirname "$0")" && pwd)"; [ -f "$__envdir/.env" ] && { set -a; . "$__envdir/.env"; set +a; }
 #
 # trigger_demo.sh — fire a CPU spike so you can watch PROACTIVE healing happen.
 # Run this in a 3rd terminal while run_full_demo.sh streams the pipeline.

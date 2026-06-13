@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Auto-load environment from .env (no manual `export` needed).
+__envdir="$(cd "$(dirname "$0")" && pwd)"; [ -f "$__envdir/.env" ] && { set -a; . "$__envdir/.env"; set +a; }
 #
 # test_phase4.sh — PROACTIVE healing test (Phase 2 -> 3 -> 4).
 # Triggers a CPU spike and asserts the swarm restarts the pod fast (fast path,

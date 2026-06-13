@@ -1,14 +1,24 @@
+# Secrets / environment
+.env
+
 # Runtime logs produced by the pipeline (not source)
+*.log
 diagnoses.log
 swarm_output.log
 pipeline_output.log
 ebpf_output.log
 phase3_output.log
 phase4_output.log
+swarm_events.json
+*.pid
+running.pids
 
 # Python caches
 __pycache__/
 *.pyc
+
+# Node / frontend
+node_modules/
 
 # Local tooling / editor
 .claude/
