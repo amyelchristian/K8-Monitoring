@@ -3,7 +3,7 @@
   <img width="1024" height="559" alt="image" src="https://github.com/user-attachments/assets/682f490a-f0f2-4821-80a1-946fdc4a9fdb" />
 </p>
 
-# K8-Monitoring: Enterprise Kubernetes Cluster Observability
+# Autonomous Kubernetes Self-Healing & Observability
 
 [![GitHub License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Kubernetes-blue.svg)](#)
