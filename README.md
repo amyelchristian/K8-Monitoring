@@ -1,9 +1,9 @@
 <p align="center">
   <!-- Replace this URL with your actual poster image path once uploaded to your repository -->
-  <img src="images/project-poster.png" width="800" alt="K8-Monitoring Project Poster">
+  <img width="1024" height="559" alt="image" src="https://github.com/user-attachments/assets/682f490a-f0f2-4821-80a1-946fdc4a9fdb" />
 </p>
 
-# ** K8-Monitoring: Enterprise Kubernetes Cluster Observability**
+# K8-Monitoring: Enterprise Kubernetes Cluster Observability
 
 [![GitHub License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Kubernetes-blue.svg)](#)
