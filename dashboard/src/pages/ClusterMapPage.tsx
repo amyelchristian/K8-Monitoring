@@ -4,8 +4,6 @@ import { Server, Boxes, Cpu, Database, HeartPulse, Zap, RotateCw, Clock } from '
 import type { SwarmData } from '../lib/useSwarmData';
 import { cpuColor, num, timeAgo } from '../lib/format';
 import { ArcGauge } from '../components/viz';
-
-/* -------------------------------------------------------- node mini gauge -- */
 function MiniGauge({ pct, color, icon: Icon, label, value }: { pct: number; color: string; icon: React.ElementType; label: string; value: string }) {
   return (
     <div className="flex flex-col items-center" style={{ width: 96 }}>
@@ -18,8 +16,6 @@ function MiniGauge({ pct, color, icon: Icon, label, value }: { pct: number; colo
     </div>
   );
 }
-
-/* ----------------------------------------------------------------- pod card -- */
 function PodCard({ m, healing }: { m: SwarmData['metrics']; healing: boolean }) {
   const cpu = m.cpu || 0;
   const memPct = ((m.memory || 0) / 256) * 100;
@@ -45,7 +41,6 @@ function PodCard({ m, healing }: { m: SwarmData['metrics']; healing: boolean }) 
       transition={{ type: 'spring', stiffness: 260, damping: 22 }}
       className={`rounded-xl w-[320px] overflow-hidden ${healing ? 'pulse-crit' : ''}`}
       style={{ background: '#0e0e10', border: `1.5px solid ${glow}`, boxShadow: `0 0 28px -10px ${glow}` }}>
-      {/* header */}
       <div className="flex items-center justify-between gap-2 p-4">
         <div className="flex items-center gap-2 min-w-0">
           <motion.span animate={{ scale: [1, 1.4, 1], opacity: [1, 0.5, 1] }} transition={{ repeat: Infinity, duration: 1.4 }}
@@ -54,12 +49,10 @@ function PodCard({ m, healing }: { m: SwarmData['metrics']; healing: boolean }) 
         </div>
         <span className={`chip ${badge} shrink-0`}>{health}</span>
       </div>
-      {/* bars */}
       <div className="px-4 pb-3 flex flex-col gap-3" style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 14 }}>
         <Bar label="CPU" pct={cpu} color={cpuColor(cpu)} valueLabel={`${num(cpu)}%`} />
         <Bar label="MEM" pct={memPct} color={memPct >= 85 ? '#ff3366' : '#ff6600'} valueLabel={`${Math.round(m.memory || 0)}Mi`} />
       </div>
-      {/* footer */}
       <div className="flex justify-between px-4 py-3" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         {[['Restarts', String(m.restarts ?? 0), (m.restarts ?? 0) > 0 ? '#ff3366' : '#d4d4d8'],
           ['Age', '—', '#d4d4d8'], ['Port', ':8000', '#d4d4d8'], ['NS', 'default', '#d4d4d8']].map(([k, v, c]) => (
@@ -72,8 +65,6 @@ function PodCard({ m, healing }: { m: SwarmData['metrics']; healing: boolean }) 
     </motion.div>
   );
 }
-
-/* ================================================================= page === */
 export function ClusterMapPage({ data }: { data: SwarmData }) {
   const m = data.metrics;
   const cpu = m.cpu || 0;
@@ -104,12 +95,10 @@ export function ClusterMapPage({ data }: { data: SwarmData }) {
       <h2 className="text-lg font-bold flame-text">Cluster Map</h2>
 
       <div className="glass rounded-2xl p-6 relative overflow-hidden">
-        {/* dot grid + faint red glow backdrop */}
         <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px)', backgroundSize: '22px 22px' }} />
         <div className="absolute -top-20 -right-20 w-80 h-80 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(255,51,0,0.12), transparent 70%)' }} />
 
         <div className="relative">
-          {/* ---- node card (full width) ---- */}
           <div className="rounded-2xl" style={{ padding: '24px 32px', background: 'rgba(255,255,255,0.015)', border: `1px solid ${nodeHealth}40`, boxShadow: `0 0 20px ${nodeHealth}33` }}>
             <div className="flex items-center justify-between flex-wrap gap-6">
               <div className="flex items-center gap-3">
@@ -135,25 +124,18 @@ export function ClusterMapPage({ data }: { data: SwarmData }) {
               </div>
             </div>
           </div>
-
-          {/* ---- clean dashed connector ---- */}
           <div style={{ borderLeft: '2px dashed rgba(0,255,136,0.3)', height: 40, marginLeft: 40 }} />
-
-          {/* ---- pods inside this node ---- */}
           <div style={{ padding: 20, background: 'rgba(0,0,0,0.3)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: 12 }}>
             <div className="text-[11px] uppercase tracking-[0.12em] text-muted mb-4">Pods in this node</div>
             <div className="flex gap-4 flex-wrap">
               <AnimatePresence mode="popLayout">
                 {online && <PodCard key={m.pod_name} m={m} healing={data.simulating} />}
               </AnimatePresence>
-              {/* empty capacity slot */}
               <div className="w-[320px] rounded-xl grid place-items-center text-[10px] mono text-muted/30" style={{ minHeight: 150, border: '1.5px dashed rgba(255,255,255,0.08)' }}>
                 {online ? 'available capacity' : 'no pods — cluster offline'}
               </div>
             </div>
           </div>
-
-          {/* ---- timeline ---- */}
           <div style={{ marginTop: 40, marginBottom: 32 }}>
             <div className="text-[11px] uppercase tracking-[0.12em] text-muted mb-4">Pod Event Timeline</div>
             <div className="flex items-start">
@@ -170,8 +152,6 @@ export function ClusterMapPage({ data }: { data: SwarmData }) {
               ))}
             </div>
           </div>
-
-          {/* ---- stats row (fills bottom) ---- */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {statCards.map(({ icon: Icon, color, label, value }) => (
               <div key={label} className="rounded-xl p-4 flex items-center gap-3" style={{ background: '#0f0f0f', border: `1px solid ${color}30` }}>
@@ -185,8 +165,6 @@ export function ClusterMapPage({ data }: { data: SwarmData }) {
               </div>
             ))}
           </div>
-
-          {/* ---- legend ---- */}
           <div className="flex items-center flex-wrap text-[10px] mono text-muted" style={{ gap: 24, marginTop: 24, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
             {[['#00ff88', 'Healthy'], ['#ffcc00', 'Warning'], ['#ff3366', 'Critical'], ['#00ccff', 'Healing']].map(([c, l]) => (
               <span key={l} className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ background: c, boxShadow: `0 0 6px ${c}` }} />{l}</span>

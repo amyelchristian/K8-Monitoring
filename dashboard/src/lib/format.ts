@@ -27,8 +27,6 @@ export function timeAgo(iso?: string): string {
 export function num(n: number): string {
   return n % 1 === 0 ? `${n}` : n.toFixed(1);
 }
-
-/** color for a CPU-of-limit percentage: green -> yellow -> red */
 export function cpuColor(pct: number): string {
   if (pct >= 85) return '#ff3366';
   if (pct >= 60) return '#ffcc00';

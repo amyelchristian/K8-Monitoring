@@ -8,8 +8,6 @@ import type { SwarmData } from '../lib/useSwarmData';
 import type { AgentStatus } from '../lib/types';
 import { hhmmss, parseHealSeconds } from '../lib/format';
 import { AnimatedNumber, ProgressRing } from '../components/viz';
-
-/* ---------------------------------------------------------------- config -- */
 const AGENTS = [
   { key: 'planner', name: 'Planner', icon: BrainCircuit, color: '#cc00ff', role: 'SRE decision-maker', glyph: '🧠',
     types: ['agent_start', 'decision', 'thinking', 'reasoning'], respTime: 3.7 },
@@ -30,8 +28,6 @@ const STATUS_META: Record<AgentStatus, { color: string; pulse?: boolean }> = {
 const TL_STATUS_COLOR: Record<string, string> = {
   DECIDED: '#cc00ff', APPROVED: '#00ff88', BLOCKED: '#ff3366', EXECUTING: '#00ccff', COMPLETE: '#00ccff',
 };
-
-/* ----------------------------------------------------- small components --- */
 function StatusBadge({ status }: { status: AgentStatus }) {
   const m = STATUS_META[status];
   return (
@@ -81,14 +77,10 @@ function CopyBtn({ text }: { text: string }) {
     </button>
   );
 }
-
-/* ============================================================== the page == */
 export function AgentsPage({ data }: { data: SwarmData }) {
   const { events, agents, heals, metrics, aiConfig, simulating } = data;
   const [open, setOpen] = useState<Set<number>>(new Set());
   const cnt = heals.length;
-
-  /* ---- Section 4: decision timeline derived from real events ---- */
   const timeline = useMemo(() => {
     const out: { id: number; agentKey: AgentKey; action: string; status: string; detail: string; ts: string }[] = [];
     for (const e of events) {
@@ -103,8 +95,6 @@ export function AgentsPage({ data }: { data: SwarmData }) {
     }
     return out.slice(-14).reverse();
   }, [events]);
-
-  /* ---- Section 5: last LLM interaction (representative when fast-pathed) -- */
   const lastInc = useMemo(() => [...events].reverse().find((e) => e.type === 'incident'), [events]);
   const incMetric = lastInc?.metric || 'cpu_spike';
   const incPod = lastInc?.pod || metrics.pod_name || 'victim-app';
@@ -114,8 +104,6 @@ export function AgentsPage({ data }: { data: SwarmData }) {
     action: 'restart_pod', target: incPod, reasoning: `${incMetric} sustained above limit; matches known signature`,
     risk_level: 'low', confidence: 0.96, approved: true,
   };
-
-  /* ---- Section 3: comparison groups ---- */
   const groups = [
     { title: 'Response Time', icon: Clock, rows: AGENTS.map((a) => ({ a, value: a.respTime, max: 5, label: `${a.respTime}s` })) },
     { title: 'Success Rate', icon: CheckCircle2, rows: AGENTS.map((a) => ({ a, value: 100, max: 100, label: '100%' })) },
@@ -125,8 +113,6 @@ export function AgentsPage({ data }: { data: SwarmData }) {
   return (
     <div className="flex flex-col gap-5 pb-6">
       <h2 className="text-lg font-bold flame-text">Agents</h2>
-
-      {/* ============ Section 1: animated pipeline header ============ */}
       <div className="glass rounded-2xl p-5 relative overflow-hidden">
         <div className="absolute -top-16 -right-10 w-72 h-72 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(255,51,0,0.10), transparent 70%)' }} />
         <div className="flex items-center justify-between mb-4">
@@ -144,8 +130,6 @@ export function AgentsPage({ data }: { data: SwarmData }) {
           <PipelineNode a={AGENTS[2]} status={agents.executor} />
         </div>
       </div>
-
-      {/* ============ Section 2: redesigned agent cards ============ */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
         {AGENTS.map((a, idx) => {
           const Icon = a.icon;
@@ -156,8 +140,6 @@ export function AgentsPage({ data }: { data: SwarmData }) {
             <motion.div key={a.key} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1, duration: 0.4 }}
               className="rounded-2xl p-5 flex flex-col gap-4 relative overflow-hidden" style={{ background: '#0f0f0f', border: `1px solid ${a.color}33`, boxShadow: `0 0 40px -20px ${a.color}` }}>
               <div className="absolute -top-12 -right-10 w-44 h-44 pointer-events-none" style={{ background: `radial-gradient(circle, ${a.color}1f, transparent 70%)` }} />
-
-              {/* header */}
               <div className="flex items-start gap-4 relative">
                 <div className="relative w-20 h-20 grid place-items-center shrink-0">
                   <motion.span className="absolute inset-0 rounded-2xl" style={{ border: `2px solid ${a.color}` }}
@@ -176,8 +158,6 @@ export function AgentsPage({ data }: { data: SwarmData }) {
                   <div className="mono text-[10px] mt-2" style={{ color: a.color }}>{a.glyph} agent · {a.key}</div>
                 </div>
               </div>
-
-              {/* performance ring + stats */}
               <div className="flex items-center gap-4">
                 <ProgressRing pct={100} color={a.color} size={92} stroke={8}>
                   <div className="text-center">
@@ -199,8 +179,6 @@ export function AgentsPage({ data }: { data: SwarmData }) {
                   ))}
                 </div>
               </div>
-
-              {/* recent activity */}
               <div>
                 <div className="text-[10px] uppercase tracking-wider text-muted mb-2 flex items-center gap-1.5"><Activity className="w-3 h-3" /> Recent activity</div>
                 <div className="flex flex-col gap-1.5 max-h-[200px] overflow-y-auto pr-1">
@@ -218,8 +196,6 @@ export function AgentsPage({ data }: { data: SwarmData }) {
           );
         })}
       </div>
-
-      {/* ============ Section 3: performance comparison ============ */}
       <div className="glass rounded-2xl p-5">
         <div className="text-[13px] font-bold mb-4">Agent Performance Comparison</div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -247,8 +223,6 @@ export function AgentsPage({ data }: { data: SwarmData }) {
           })}
         </div>
       </div>
-
-      {/* ============ Section 4: decision history timeline ============ */}
       <div className="glass rounded-2xl p-5">
         <div className="text-[13px] font-bold mb-4">Decision History</div>
         {timeline.length === 0 ? (
@@ -261,12 +235,10 @@ export function AgentsPage({ data }: { data: SwarmData }) {
               const sColor = TL_STATUS_COLOR[t.status] || '#9a9a9a';
               return (
                 <div key={t.id} className="relative flex gap-3 pb-4 last:pb-0">
-                  {/* rail */}
                   <div className="flex flex-col items-center shrink-0">
                     <span className="w-3 h-3 rounded-full mt-1.5 z-10" style={{ background: a.color, boxShadow: `0 0 8px ${a.color}` }} />
                     {i < timeline.length - 1 && <span className="w-px flex-1 mt-1" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.04))' }} />}
                   </div>
-                  {/* card */}
                   <motion.div whileHover={{ y: -2, boxShadow: `0 8px 24px -12px ${a.color}` }} onClick={() => setOpen((p) => { const n = new Set(p); n.has(t.id) ? n.delete(t.id) : n.add(t.id); return n; })}
                     className="flex-1 rounded-xl px-3 py-2.5 cursor-pointer select-none" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
                     <div className="flex items-center gap-2 flex-wrap">
@@ -292,8 +264,6 @@ export function AgentsPage({ data }: { data: SwarmData }) {
           </div>
         )}
       </div>
-
-      {/* ============ Section 5: LLM activity panel ============ */}
       <div className="glass rounded-2xl p-5">
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div className="text-[13px] font-bold">LLM Activity</div>
@@ -304,7 +274,6 @@ export function AgentsPage({ data }: { data: SwarmData }) {
           )}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* prompt */}
           <div className="rounded-xl overflow-hidden" style={{ background: '#0d0d0d', border: '1px solid rgba(255,51,0,0.18)' }}>
             <div className="flex items-center justify-between px-3 py-2 border-b border-line">
               <span className="text-[10px] uppercase tracking-wider text-muted">Last Prompt Sent to LLM</span>
@@ -322,7 +291,6 @@ export function AgentsPage({ data }: { data: SwarmData }) {
               ))}
             </pre>
           </div>
-          {/* response */}
           <div className="rounded-xl overflow-hidden" style={{ background: '#0d0d0d', border: '1px solid rgba(0,255,136,0.18)' }}>
             <div className="flex items-center justify-between px-3 py-2 border-b border-line">
               <span className="text-[10px] uppercase tracking-wider text-muted">LLM Response {agents.fastPath && <span className="text-muted/50">(would-be — fast path used)</span>}</span>

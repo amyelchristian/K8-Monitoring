@@ -411,8 +411,6 @@ class DashboardAPIHandler(BaseHTTPRequestHandler):
             )
         except Exception as e:  # node down / minikube absent — fine, host scripts still updated
             print(f"[Settings] node config sync skipped: {e}", flush=True)
-
-    # ------------------------------------------------------------------ demo --
     def _pipeline_running(self):
         """True if the snitch pipeline process group started by us is still alive."""
         if not os.path.exists(PIPELINE_PID_FILE):

@@ -23,8 +23,6 @@ function Panel({ title, sub, children, className = '', style }: { title: string;
     </motion.div>
   );
 }
-
-/* ---- Chart 5: custom SVG resolution flow (sankey-style) -------------------- */
 function ResolutionFlow({ d }: { d: { detected: number; warning: number; critical: number; fast: number; llm: number; blocked: number; healed: number; manual: number } }) {
   const node = (x: number, y: number, label: string, color: string) => (
     <g>
@@ -49,7 +47,6 @@ function ResolutionFlow({ d }: { d: { detected: number; warning: number; critica
   const sw = (n: number) => Math.min(2 + n * 2, 14);
   return (
     <svg viewBox="0 0 900 250" width="100%" style={{ minHeight: 230 }}>
-      {/* links (drawn under nodes) */}
       {link(188, 70, 250, 60, C.warn, sw(d.warning), 'l-dw')}
       {link(188, 70, 250, 150, C.crit, sw(d.critical), 'l-dc')}
       {link(378, 60, 440, 50, C.fast, sw(d.fast), 'l-wf')}
@@ -58,7 +55,6 @@ function ResolutionFlow({ d }: { d: { detected: number; warning: number; critica
       {link(568, 50, 700, 80, C.ok, sw(d.fast), 'l-fh')}
       {link(568, 130, 700, 80, C.ok, sw(d.llm), 'l-lh')}
       {link(568, 200, 700, 180, '#888', sw(d.blocked), 'l-bm')}
-      {/* nodes */}
       {node(60, 53, 'Detected', C.flame)}
       {node(250, 43, 'WARNING', C.warn)}
       {node(250, 133, 'CRITICAL', C.crit)}
@@ -126,8 +122,6 @@ export function AnalyticsPage({ data }: { data: SwarmData }) {
   return (
     <div className="flex flex-col gap-4 pb-6">
       <h2 className="text-lg font-bold flame-text">Analytics</h2>
-
-      {/* ---- Stat cards ---- */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {statCards.map((c, i) => {
           const Icon = c.icon;
@@ -149,15 +143,12 @@ export function AnalyticsPage({ data }: { data: SwarmData }) {
           );
         })}
       </div>
-
-      {/* ---- Row B: fast vs llm + ranked metrics ---- */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Panel title="Fast Path vs LLM Path" sub="rule-based vs LLM remediation" style={{ padding: '28px 32px 24px 32px' }}>
           <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-x-10 flex-1" style={{ marginTop: 28 }}>
             {[{ label: '⚡ FAST PATH', n: derived.fast, pct: derived.fastPct, color: C.fast, unit: 'executions' }, null,
               { label: '🤖 LLM PATH', n: derived.llm, pct: derived.llmPct, color: C.llm, unit: 'decisions' }].map((g) =>
               g === null ? (
-                /* VS divider */
                 <div key="vs" className="flex flex-col items-center justify-center gap-2 px-1 self-stretch">
                   <div className="w-px bg-line" style={{ height: 80 }} />
                   <div className="w-9 h-9 rounded-full grid place-items-center text-[11px] mono shrink-0"
@@ -167,7 +158,6 @@ export function AnalyticsPage({ data }: { data: SwarmData }) {
               ) : (
                 <div key={g.label} className="flex flex-col items-center min-w-0">
                   <div className="text-[12px] font-bold whitespace-nowrap" style={{ color: g.color }}>{g.label}</div>
-                  {/* arc + number stacked, number pulled into the arc hollow so nothing overflows */}
                   <div className="flex flex-col items-center w-full" style={{ maxWidth: 200, marginTop: 20 }}>
                     <ArcGauge pct={g.pct} color={g.color} size={180} stroke={14} />
                     <div className="mono font-extrabold leading-none" style={{ color: g.color, fontSize: 42, marginTop: -30 }}>
@@ -216,8 +206,6 @@ export function AnalyticsPage({ data }: { data: SwarmData }) {
           </div>
         </Panel>
       </div>
-
-      {/* ---- Row C: heals-by-hour area + agent rings ---- */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Panel title="Heals by Hour" sub="recovery volume over the day">
           <div style={{ width: '100%', height: 200 }}>
@@ -270,13 +258,9 @@ export function AnalyticsPage({ data }: { data: SwarmData }) {
           </div>
         </Panel>
       </div>
-
-      {/* ---- Chart 5: resolution flow ---- */}
       <Panel title="Incident Resolution Flow" sub="detection → triage → remediation → outcome">
         <ResolutionFlow d={derived.flow} />
       </Panel>
-
-      {/* ---- Chart 6: heal speed distribution ---- */}
       <Panel title="Heal Speed Distribution" sub="every heal placed by recovery time">
         <div className="flex flex-col gap-3 py-1">
           {derived.buckets.map((b) => (

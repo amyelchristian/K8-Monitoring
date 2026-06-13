@@ -1,24 +1,20 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
-/* ============================================================================
-   eBPF-Swarm — premium dark NOC theme
-   Deep black backgrounds, red/orange gradient accents, neon status colors.
-   ========================================================================== */
 @theme {
-  --color-ink: #0a0a0a;          /* deep black background */
-  --color-ink-2: #0d0d0d;        /* sidebar */
-  --color-card: #111111;         /* cards */
-  --color-line: #1c1c1f;         /* hairline borders */
+  --color-ink: #0a0a0a;
+  --color-ink-2: #0d0d0d;
+  --color-card: #111111;
+  --color-line: #1c1c1f;
 
-  --color-flame: #ff3300;        /* primary accent */
-  --color-flame-2: #ff6600;      /* gradient end */
+  --color-flame: #ff3300;
+  --color-flame-2: #ff6600;
 
-  --color-ok: #00ff88;           /* success neon green */
-  --color-warn: #ffcc00;         /* warning yellow */
-  --color-crit: #ff3366;         /* critical red */
-  --color-fast: #00ccff;         /* fast path electric blue */
-  --color-llm: #cc00ff;          /* LLM path purple */
+  --color-ok: #00ff88;
+  --color-warn: #ffcc00;
+  --color-crit: #ff3366;
+  --color-fast: #00ccff;
+  --color-llm: #cc00ff;
 
   --color-fg: #ffffff;
   --color-muted: #888888;
@@ -39,10 +35,9 @@ body {
   margin: 0;
   background: #0a0a0a;
   color: #fff;
-  overflow: hidden;            /* app manages its own scroll regions */
+  overflow: hidden;
 }
 
-/* ---- Ambient red/orange radial glow behind everything ---------------------- */
 .app-glow::before {
   content: "";
   position: fixed;
@@ -55,7 +50,6 @@ body {
     radial-gradient(700px 700px at 50% 120%, rgba(255, 102, 0, 0.15), transparent 65%);
 }
 
-/* ---- Reusable surface utilities ------------------------------------------- */
 .glass {
   background: rgba(13, 13, 15, 0.65);
   backdrop-filter: blur(24px) saturate(1.2);
@@ -102,7 +96,6 @@ body {
 
 .mono { font-family: var(--font-mono); }
 
-/* ---- Status chips ---------------------------------------------------------- */
 .chip { font-family: var(--font-mono); font-size: 9px; font-weight: 700; text-transform: uppercase;
         letter-spacing: 0.06em; padding: 2px 7px; border-radius: 999px; display: inline-flex; align-items: center; gap: 4px; }
 .chip-ok   { color: #00ff88; background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.2); }
@@ -112,7 +105,6 @@ body {
 .chip-llm  { color: #cc00ff; background: rgba(204,0,255,0.1); border: 1px solid rgba(204,0,255,0.2); }
 .chip-mut  { color: #888888; background: rgba(136,136,136,0.1); border: 1px solid rgba(136,136,136,0.2); }
 
-/* ---- Scrollbars ------------------------------------------------------------ */
 *::-webkit-scrollbar { width: 6px; height: 6px; }
 *::-webkit-scrollbar-track { background: transparent; }
 *::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
@@ -123,7 +115,6 @@ body {
 .scrollbar-none::-webkit-scrollbar { display: none; }
 .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* ---- Animations ------------------------------------------------------------ */
 @keyframes dash { to { stroke-dashoffset: -16; } }
 @keyframes flow { to { offset-distance: 100%; } }
 @keyframes pulse-ring {
@@ -148,17 +139,14 @@ body {
 .blink { animation: blink 1.1s ease-in-out infinite; }
 .spin { animation: spin 1s linear infinite; }
 
-/* thinking dots */
 .dots span { display: inline-block; width: 4px; height: 4px; margin: 0 1px; border-radius: 50%;
   background: currentColor; animation: blink 1s infinite; }
 .dots span:nth-child(2) { animation-delay: 0.2s; }
 .dots span:nth-child(3) { animation-delay: 0.4s; }
 
-/* moving packet along a path */
 .packet { offset-rotate: 0deg; animation: flow 1.4s linear infinite; }
 .packet-fast { animation-duration: 0.7s; }
 
-/* nav active gradient border */
 .nav-active { background: rgba(255, 51, 0, 0.1); color: #fff; }
 .nav-active::before { content:""; position:absolute; left:0; top:6px; bottom:6px; width:3px; border-radius:3px;
   background: #ff3300; }

@@ -1,15 +1,4 @@
 #!/usr/bin/env bash
-#
-# install_and_run.sh — set up the Snitch inside the Minikube node and run it.
-# Runs on your Mac; drives the Linux node via `minikube ssh` / `minikube cp`.
-#
-#   chmod +x install_and_run.sh
-#   ./install_and_run.sh
-#
-# bcc + kernel headers are installed BEST-EFFORT. On Minikube's Docker driver the
-# kernel is a linuxkit build with no matching linux-headers package, so real eBPF
-# won't compile -- the monitor then uses its /proc fallback, which needs only the
-# node's stock python3. The install never hard-fails on that.
 
 set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -23,7 +12,6 @@ minikube cp "${SCRIPT_DIR}/ebpf_monitor.py" "${REMOTE}" || {
   echo "minikube cp failed (is minikube running?)"; exit 1; }
 
 blue "==> Step 2: best-effort install of bcc tooling inside the node"
-# Split the install so a missing linux-headers package can't block bpfcc-tools.
 minikube ssh -- "sudo apt-get update -qq" || yellow "apt-get update failed; continuing"
 minikube ssh -- "sudo DEBIAN_FRONTEND=noninteractive apt-get install -y bpfcc-tools python3-bpfcc" \
   || yellow "bpfcc-tools/python3-bpfcc install failed; /proc fallback will be used"

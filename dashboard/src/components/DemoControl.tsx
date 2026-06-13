@@ -67,7 +67,6 @@ export function DemoControl({ data, onClose }: { data: SwarmData; onClose: () =>
         <motion.div initial={{ scale: 0.92, y: 16 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.92, y: 16 }} transition={{ type: 'spring', stiffness: 260, damping: 24 }}
           onClick={(e) => e.stopPropagation()} className="w-full max-w-[460px] rounded-2xl overflow-hidden"
           style={{ background: 'rgba(13,13,15,0.95)', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 30px 80px -20px rgba(0,0,0,0.8)' }}>
-          {/* header */}
           <div className="flex items-center justify-between px-5 py-4" style={{ background: 'linear-gradient(135deg, rgba(255,51,0,0.15), transparent)' }}>
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg flame-bg grid place-items-center"><Flame className="w-4.5 h-4.5 text-white" /></div>
@@ -77,7 +76,6 @@ export function DemoControl({ data, onClose }: { data: SwarmData; onClose: () =>
           </div>
 
           <div className="p-5 flex flex-col gap-5">
-            {/* system status */}
             <div>
               <div className="text-[10px] uppercase tracking-[0.16em] text-muted font-semibold mb-2">System Status</div>
               <div className="rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--color-line)' }}>
@@ -102,8 +100,6 @@ export function DemoControl({ data, onClose }: { data: SwarmData; onClose: () =>
                 <StatusRow label="Victim App" ok={!!sys?.victim_app} value={sys?.victim_app ? (sys.pod_name || 'Running ✅') : undefined} />
               </div>
             </div>
-
-            {/* chaos */}
             <div>
               <div className="text-[10px] uppercase tracking-[0.16em] text-muted font-semibold mb-2">Inject Chaos</div>
               <div className="grid grid-cols-2 gap-2">
@@ -113,8 +109,6 @@ export function DemoControl({ data, onClose }: { data: SwarmData; onClose: () =>
                 <Btn id="reset" onClick={() => post('/api/chaos/reset', 'reset', 'Reset')} icon={RotateCcw} color="#00ccff">Reset All</Btn>
               </div>
             </div>
-
-            {/* demo script */}
             <div>
               <div className="text-[10px] uppercase tracking-[0.16em] text-muted font-semibold mb-2">Demo Script</div>
               <button onClick={() => post('/api/demo/run', 'demo', 'Auto-demo')} disabled={!!busy || data.simulating}

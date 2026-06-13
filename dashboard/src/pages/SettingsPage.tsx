@@ -38,8 +38,6 @@ export function SettingsPage({ data }: { data: SwarmData }) {
   const [autoscroll, setAutoscroll] = useState(true);
   const [refresh, setRefresh] = useState(1);
   const [state, setState] = useState<SaveState>('idle');
-
-  // Load the live config from the backend on mount so sliders reflect reality.
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -84,8 +82,6 @@ export function SettingsPage({ data }: { data: SwarmData }) {
     }
     setTimeout(() => setState('idle'), 4000);
   };
-
-  // Live preview: where does the current pod CPU sit against the chosen thresholds?
   const cpu = data.metrics.cpu || 0;
   const band = cpu >= cpuCrit ? 'critical' : cpu >= cpuWarn ? 'warning' : 'ok';
   const bandColor = band === 'critical' ? '#ff3366' : band === 'warning' ? '#ffcc00' : '#00ff88';
@@ -101,8 +97,6 @@ export function SettingsPage({ data }: { data: SwarmData }) {
         <Slider label="CPU critical" value={cpuCrit} set={setCpuCrit} min={20} max={100} />
         <Slider label="Memory warning" value={memWarn} set={setMemWarn} min={10} max={95} />
         <Slider label="Memory critical" value={memCrit} set={setMemCrit} min={20} max={100} />
-
-        {/* live CPU-vs-threshold preview */}
         <div className="rounded-xl p-3 mt-1" style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.06)' }}>
           <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-muted mb-2">
             <span>Live preview · current pod CPU</span>
@@ -110,7 +104,6 @@ export function SettingsPage({ data }: { data: SwarmData }) {
           </div>
           <div className="relative h-3 rounded-full overflow-hidden" style={{ background: '#000' }}>
             <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(cpu, 100)}%`, background: bandColor, boxShadow: `0 0 10px ${bandColor}99` }} />
-            {/* threshold markers */}
             <span className="absolute top-0 bottom-0 w-0.5" style={{ left: `${cpuWarn}%`, background: '#ffcc00' }} title={`warning ${cpuWarn}%`} />
             <span className="absolute top-0 bottom-0 w-0.5" style={{ left: `${cpuCrit}%`, background: '#ff3366' }} title={`critical ${cpuCrit}%`} />
           </div>

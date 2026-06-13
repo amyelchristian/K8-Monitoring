@@ -24,7 +24,6 @@ export function Sidebar({ page, setPage, data }: { page: PageId; setPage: (p: Pa
   const live = [...data.events].slice(-5).reverse();
   return (
     <aside className="w-[240px] shrink-0 flex flex-col h-full relative z-30" style={{ background: 'rgba(13,13,15,0.6)', borderRight: '1px solid var(--color-line)', backdropFilter: 'blur(20px)' }}>
-      {/* Logo Area */}
       <div className="h-20 px-6 flex items-center gap-3">
         <div className="w-8 h-8 rounded-[10px] flame-bg grid place-items-center">
           <Flame className="w-4 h-4 text-white" />
@@ -35,7 +34,6 @@ export function Sidebar({ page, setPage, data }: { page: PageId; setPage: (p: Pa
       </div>
 
       <div className="flex-1 flex flex-col gap-6 px-4 py-2 overflow-y-auto overflow-x-hidden scrollbar-none">
-        {/* Main Nav */}
         <div>
           <div className="text-[10px] uppercase tracking-[0.16em] text-muted font-bold px-2 mb-3">Overview</div>
           <nav className="flex flex-col gap-1.5">
@@ -53,8 +51,6 @@ export function Sidebar({ page, setPage, data }: { page: PageId; setPage: (p: Pa
             })}
           </nav>
         </div>
-
-        {/* Live Events (mimicking Friends/Groups list) */}
         <div className="flex-1 min-h-0 flex flex-col">
           <div className="text-[10px] uppercase tracking-[0.16em] text-muted font-bold px-2 mb-3">Live Events</div>
           <div className="flex-1 flex flex-col gap-1 pr-1">
@@ -74,8 +70,6 @@ export function Sidebar({ page, setPage, data }: { page: PageId; setPage: (p: Pa
           </div>
         </div>
       </div>
-
-      {/* Settings / Bottom area */}
       <div className="p-4 border-t border-line mt-auto flex flex-col gap-1">
         <button onClick={() => setPage('settings')} className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-200 group ${page === 'settings' ? 'flame-bg text-white shadow-lg' : 'text-muted hover:text-white hover:bg-white/5'}`}>
           <Settings className={`w-[18px] h-[18px] shrink-0 transition-colors ${page === 'settings' ? 'text-white' : 'text-muted group-hover:text-white'}`} />

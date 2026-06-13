@@ -2,9 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ArrowRight, Zap, Check } from 'lucide-react';
 import type { SwarmData } from '../lib/useSwarmData';
-
-/* A non-blocking guided walkthrough for judges. Sits at the bottom; the live
-   dashboard stays visible behind it. Auto-advances when real events fire. */
 export function PresentationMode({ data, onClose }: { data: SwarmData; onClose: () => void }) {
   const [step, setStep] = useState(0);
   const healBaseline = useRef(data.heals.length);
@@ -12,8 +9,6 @@ export function PresentationMode({ data, onClose }: { data: SwarmData; onClose: 
   const hasIncident = useMemo(() => data.events.some((e) => e.type === 'incident'), [data.events]);
   const healed = data.heals.length > healBaseline.current;
   const lastHeal = data.heals[data.heals.length - 1];
-
-  // auto-advance: incident detected → step 2; healed → step 4
   useEffect(() => { if (step === 1 && hasIncident) setStep(2); }, [step, hasIncident]);
   useEffect(() => { if ((step === 2 || step === 3) && healed) setStep(4); }, [step, healed]);
 

@@ -25,7 +25,6 @@ import sys
 import time
 from datetime import datetime
 
-# ---- tunables ---------------------------------------------------------------
 POLL_SECONDS = 1.0
 # Proactive thresholds, as a fraction of each pod's cgroup CPU limit. These are the
 # DEFAULTS; they are overridden at runtime from config.json (dashboard settings),
@@ -134,9 +133,7 @@ def emit_crash_alert(name, pid, exit_code):
     print("", flush=True)
 
 
-# ----------------------------------------------------------------------------
 # /proc + cgroup helpers
-# ----------------------------------------------------------------------------
 def list_pids():
     return [int(d) for d in os.listdir("/proc") if d.isdigit()]
 
@@ -229,9 +226,7 @@ def is_pod_cgroup(rel):
     return rel is not None and "kubepods" in rel
 
 
-# ----------------------------------------------------------------------------
 # bcc backend (best-effort; expected to fail on linuxkit kernels)
-# ----------------------------------------------------------------------------
 def try_init_bcc():
     """Return a BPF object attached to sched_process_exit, or None on any failure."""
     try:
@@ -260,9 +255,7 @@ def try_init_bcc():
         return None
 
 
-# ----------------------------------------------------------------------------
 # main loop
-# ----------------------------------------------------------------------------
 def main():
     bpf = try_init_bcc()
     backend = "eBPF (bcc)" if bpf else "/proc polling (fallback)"
@@ -335,8 +328,6 @@ def main():
         dt = (loop_start - prev_loop_start) if prev_loop_start else POLL_SECONDS
         dt = max(dt, 1e-6)
         prev_loop_start = loop_start
-
-        # ---- proactive CPU + memory detection (per pod cgroup) ----
         now = time.monotonic()
 
         def cooled(rel, kind):
@@ -379,8 +370,6 @@ def main():
                 elif mfrac >= mem_warn and cooled(rel, "mem"):
                     cg_last_alert[(rel, "mem")] = now
                     emit_mem_warning(name, top_pid, mem_mi, mtrend)
-
-        # ---- crash detection (watched pid disappeared) ----
         vanished_by_cg = {}
         for pid, (comm, rel, seen) in prev_meta.items():
             if pid in cur_ticks:

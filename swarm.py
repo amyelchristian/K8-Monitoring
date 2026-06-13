@@ -36,7 +36,6 @@ try:
 except ImportError:
     pass
 
-# ---- config ----------------------------------------------------------------
 BASE_URL = "https://integrate.api.nvidia.com/v1"
 MODEL = os.environ.get("NVIDIA_MODEL", "meta/llama-3.1-70b-instruct")
 NVIDIA_TIMEOUT = int(os.environ.get("NVIDIA_TIMEOUT", "20"))
@@ -131,7 +130,6 @@ Only approve if: action is restart_pod or scale_down AND urgency is immediate AN
 STRICTER = "\nReturn ONLY raw JSON. No markdown fences, no commentary, no prose."
 
 
-# ---- LLM plumbing ----------------------------------------------------------
 _client = None
 
 
@@ -193,7 +191,6 @@ def llm_json(system_prompt, user_prompt):
         return None
 
 
-# ---- agents ----------------------------------------------------------------
 def planner(diagnosis):
     decision = llm_json(PLANNER_SYS, "Here is the diagnosis: " + json.dumps(diagnosis))
     if not decision or "action" not in decision:
@@ -295,7 +292,6 @@ def executor(decision):
     return False, timing
 
 
-# ---- freshness (skew-tolerant) --------------------------------------------
 def compute_age(ts_str):
     """Seconds since the alert was generated. Robust to Mac/node timezone
     disagreement: smallest |age| across local and UTC interpretations."""
@@ -318,7 +314,6 @@ def is_fresh(ts_str):
     return compute_age(ts_str) <= FRESH_SECONDS
 
 
-# ---- timing proof ----------------------------------------------------------
 def print_timing(diagnosis, received_dt, timing):
     """Print the [Timer] block. received_dt is wall-clock when we read the line;
     timing carries monotonic marks from the executor."""
@@ -356,7 +351,6 @@ def print_timing(diagnosis, received_dt, timing):
         print(f"[Timer] Before crash:        pod was at {cpu}% CPU, limit is 500m", flush=True)
 
 
-# ---- per-diagnosis pipeline ------------------------------------------------
 def run_swarm(diagnosis, received_dt, received_mono):
     metric = diagnosis.get("metric", "?")
     urgency = diagnosis.get("urgency", "immediate")
@@ -392,8 +386,6 @@ def run_swarm(diagnosis, received_dt, received_mono):
         print(f"[Swarm] {msg}", flush=True)
         emitter.emit("cooldown", "system", msg, pod=pod)
         return
-
-    # --- routing: fast path (no LLM) vs full LLM pipeline ---
     rule = FAST_PATH_RULES.get(metric)
     if rule and urgency in rule["urgency"]:
         print(f"[Swarm] ⚡ FAST PATH activated for {metric}", flush=True)

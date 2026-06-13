@@ -12,7 +12,6 @@ export function TopNav({ data, onDemoControl, onPresent }: { data: SwarmData; on
 
   return (
     <header className="relative z-20 shrink-0 h-20 px-8 flex items-center justify-between gap-6 bg-transparent">
-      {/* Search Bar */}
       <div className="flex-1 max-w-md">
         <div className="relative group">
           <Search className="w-[18px] h-[18px] text-muted absolute left-4 top-1/2 -translate-y-1/2 group-focus-within:text-white transition-colors" />
@@ -23,10 +22,7 @@ export function TopNav({ data, onDemoControl, onPresent }: { data: SwarmData; on
           />
         </div>
       </div>
-
-      {/* Right Side Actions */}
       <div className="flex items-center gap-5">
-        {/* Quick Stats */}
         <div className="hidden xl:flex items-center gap-4 mr-4 text-white">
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-[18px] h-[18px] text-ok" />
@@ -52,8 +48,6 @@ export function TopNav({ data, onDemoControl, onPresent }: { data: SwarmData; on
             </div>
           </div>
         </div>
-
-        {/* Buttons / Actions */}
         <div className="flex items-center gap-2">
           <button onClick={onPresent} title="Presentation mode" className="w-10 h-10 rounded-full border border-line grid place-items-center text-muted hover:text-white hover:bg-white/5 transition-colors" style={{ background: 'rgba(255,255,255,0.02)' }}>
             <Presentation className="w-4 h-4" />
@@ -67,8 +61,6 @@ export function TopNav({ data, onDemoControl, onPresent }: { data: SwarmData; on
         </div>
 
         <div className="w-px h-8 bg-line" />
-
-        {/* Profile / Status Area */}
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full border border-line grid place-items-center overflow-hidden relative" style={{ background: 'rgba(255,255,255,0.04)' }}>
             <User className="w-5 h-5 text-muted" />

@@ -87,7 +87,6 @@ function Panel({ title, lines, accent, render }: { title: string; lines: unknown
 }
 
 export function LogsPage({ data }: { data: SwarmData }) {
-  // "diagnoses.log" view: incident-derived diagnoses; "swarm_output.log": events as log lines
   const diagnoses = useMemo(() => data.events.filter((e) => e.type === 'incident').map((e) => ({
     metric: e.metric, pod: e.pod, severity: e.severity || 'critical', timestamp: e.timestamp,
   })), [data.events]);

@@ -22,7 +22,6 @@ export function HealingTimeline({ heals }: { heals: Heal[] }) {
         <div className="flex flex-col gap-2.5">
           {last5.map((h) => {
             const isFastest = h.seconds === fastest;
-            // split the total heal time across phases (illustrative weights)
             const weights = [0.34, 0.18, 0.06, 0.42];
             return (
               <div key={h.id} className="flex items-center gap-3">

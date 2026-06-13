@@ -1,9 +1,4 @@
 #!/usr/bin/env bash
-# run_pipeline_only.sh — the live eBPF snitch → causal brain → swarm pipeline,
-# WITHOUT relaunching the dashboard (unlike run_full_demo.sh). Started/stopped from
-# the browser via POST /api/pipeline/start and /api/pipeline/stop.
-#
-# Auto-load environment from .env (no manual `export` needed).
 __envdir="$(cd "$(dirname "$0")" && pwd)"; [ -f "$__envdir/.env" ] && { set -a; . "$__envdir/.env"; set +a; }
 
 cd "$(dirname "$0")"

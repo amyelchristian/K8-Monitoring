@@ -1,11 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion, useSpring, useMotionValueEvent } from 'framer-motion';
 
-/* ============================================================================
-   Reusable premium viz primitives — pure SVG/CSS + Framer Motion.
-   ========================================================================== */
-
-/** Count-up number driven by a Framer Motion spring. */
 export function AnimatedNumber({ value, decimals = 0, prefix = '', suffix = '' }: {
   value: number; decimals?: number; prefix?: string; suffix?: string;
 }) {
@@ -21,14 +16,13 @@ const polar = (cx: number, cy: number, r: number, deg: number) => {
   return { x: cx + r * Math.cos(a), y: cy - r * Math.sin(a) };
 };
 
-/** Semicircular arc gauge (top half), fills left→right on load. */
 export function ArcGauge({ pct, color, size = 184, stroke = 13 }: {
   pct: number; color: string; size?: number; stroke?: number;
 }) {
   const r = size / 2 - stroke;
   const cx = size / 2, cy = size / 2;
   const L = polar(cx, cy, r, 180), R = polar(cx, cy, r, 0);
-  const d = `M ${L.x} ${L.y} A ${r} ${r} 0 0 1 ${R.x} ${R.y}`; // sweep 1 = arch over the top (speedometer)
+  const d = `M ${L.x} ${L.y} A ${r} ${r} 0 0 1 ${R.x} ${R.y}`;
   const len = Math.PI * r;
   const clamped = Math.max(0, Math.min(pct, 100));
   return (
@@ -49,7 +43,6 @@ export function ArcGauge({ pct, color, size = 184, stroke = 13 }: {
   );
 }
 
-/** Full circular progress ring, sweeps clockwise on load. */
 export function ProgressRing({ pct, color, size = 96, stroke = 8, children }: {
   pct: number; color: string; size?: number; stroke?: number; children?: React.ReactNode;
 }) {
@@ -71,7 +64,6 @@ export function ProgressRing({ pct, color, size = 96, stroke = 8, children }: {
   );
 }
 
-/** Tiny sparkline with gradient area fill. */
 export function Sparkline({ data, color, w = 88, h = 28 }: { data: number[]; color: string; w?: number; h?: number }) {
   const d = data.length ? data : [0, 0];
   const max = Math.max(...d, 1), min = Math.min(...d, 0);

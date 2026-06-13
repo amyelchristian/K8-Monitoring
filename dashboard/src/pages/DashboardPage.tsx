@@ -15,10 +15,7 @@ const CHAOS = [
 export function DashboardPage({ data, onNavigate }: { data: SwarmData; onNavigate?: (p: 'agents' | 'cluster') => void }) {
   return (
     <div className="flex flex-col xl:flex-row gap-8 min-h-full pb-8">
-      {/* Main Content Area */}
       <div className="flex-1 flex flex-col gap-8 min-w-0">
-
-        {/* Hero Banner */}
         <div className="relative rounded-[24px] p-8 overflow-hidden shadow-2xl flex flex-col justify-center min-h-[220px] glass">
           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-10 mix-blend-overlay"></div>
           <div className="absolute -right-20 -top-20 w-96 h-96 bg-flame rounded-full blur-[120px] opacity-10 pointer-events-none"></div>
@@ -38,8 +35,6 @@ export function DashboardPage({ data, onNavigate }: { data: SwarmData; onNavigat
             </button>
           </div>
         </div>
-
-        {/* Quick Actions & Status */}
         <div className="flex flex-col xl:flex-row gap-4 items-stretch">
           <div className="w-full xl:w-[320px] shrink-0">
             <PodHealthCard m={data.metrics} />
@@ -63,8 +58,6 @@ export function DashboardPage({ data, onNavigate }: { data: SwarmData; onNavigat
             ))}
           </div>
         </div>
-
-        {/* Pipeline & Alerts Section */}
         <div className="flex flex-col gap-6">
           <div>
             <h2 className="text-[18px] font-bold text-white mb-4 flex items-center gap-2">
@@ -84,11 +77,7 @@ export function DashboardPage({ data, onNavigate }: { data: SwarmData; onNavigat
           </div>
         </div>
       </div>
-
-      {/* Right Sidebar (Charts & Agents) */}
       <div className="w-full xl:w-[360px] shrink-0 flex flex-col gap-6">
-
-        {/* Statistics Section */}
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-[18px] font-bold text-white">Statistics</h2>
@@ -105,8 +94,6 @@ export function DashboardPage({ data, onNavigate }: { data: SwarmData; onNavigat
             </div>
           </div>
         </div>
-
-        {/* Agent Mentors Section */}
         <div className="flex-1 flex flex-col min-h-0">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-[18px] font-bold text-white">Active Agents</h2>

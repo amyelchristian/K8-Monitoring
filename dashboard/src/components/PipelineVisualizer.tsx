@@ -48,7 +48,6 @@ export function PipelineVisualizer({ data }: { data: SwarmData }) {
           const color = healed ? '#00ff88' : isCurrent ? '#ff3300' : isWatch ? '#ff3300' : active ? '#cc00ff' : '#444';
           return (
             <div key={n.id} className="flex items-center flex-1 last:flex-none">
-              {/* node */}
               <div className="flex flex-col items-center gap-1.5 w-[120px] shrink-0">
                 <motion.div animate={(isCurrent || isWatch) ? { scale: [1, 1.08, 1] } : { scale: 1 }} transition={{ repeat: (isCurrent || isWatch) ? Infinity : 0, duration: isWatch ? 2 : 1.2, ease: 'easeInOut' }}
                   className="w-14 h-14 rounded-2xl grid place-items-center glass shadow-sm"
@@ -63,7 +62,6 @@ export function PipelineVisualizer({ data }: { data: SwarmData }) {
                 <div className="text-[9px] text-muted">{n.sub}</div>
                 <div className="mono text-[9px]" style={{ color: active ? color : '#666' }}>{subBy[n.id]}</div>
               </div>
-              {/* connector */}
               {i < NODES.length - 1 && (
                 <div className="flex-1 h-[2px] relative mx-1" style={{ background: 'rgba(255,255,255,0.05)' }}>
                   {i < stageIdx && (

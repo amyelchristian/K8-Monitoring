@@ -1,16 +1,5 @@
 #!/usr/bin/env bash
-# Auto-load environment from .env (no manual `export` needed).
 __envdir="$(cd "$(dirname "$0")" && pwd)"; [ -f "$__envdir/.env" ] && { set -a; . "$__envdir/.env"; set +a; }
-#
-# test_phase4.sh — PROACTIVE healing test (Phase 2 -> 3 -> 4).
-# Triggers a CPU spike and asserts the swarm restarts the pod fast (fast path,
-# no LLM) BEFORE the pod ever crashes.
-#
-#   ./test_phase4.sh
-#
-# NVIDIA_API_KEY is OPTIONAL: cpu_spike/memory_leak take the LLM-free fast path.
-# Heal is verified by the pod NAME changing to a fresh Running pod (delete makes a
-# new pod with restartCount=0, so a restartCount bump never happens for a delete).
 
 set -uo pipefail
 cd "$(dirname "$0")"
@@ -44,7 +33,6 @@ trap cleanup EXIT
 
 pod_name(){ kubectl get pods -l app=${APP} --no-headers -o custom-columns=N:.metadata.name 2>/dev/null | head -1; }
 
-# Start the pipeline + swarm.
 : > diagnoses.log; : > swarm_output.log
 blue "==> Starting Snitch -> Brain pipeline + Swarm"
 minikube cp ./ebpf_monitor.py "${REMOTE}" 2>/dev/null
@@ -59,13 +47,10 @@ sleep 5
 OLD_POD=$(pod_name)
 echo "  current pod: ${OLD_POD}"
 
-# Trigger the CPU spike.
 blue "==> Triggering /stress (proactive trigger)"
 POD_IP=$(kubectl get pod -l app=${APP} -o jsonpath='{.items[0].status.podIP}')
 minikube ssh -- "curl -s --max-time 5 http://${POD_IP}:8000/stress" 2>/dev/null; echo
 
-# Watch: record alert time and the pod replacement (PASS if <=10s), then let the
-# new pod reach Running and the swarm finish its Timer block (up to ~25s total).
 blue "==> Watching for proactive heal (restart <=10s; allow up to ~25s for full recovery)"
 START=$(date +%s)
 RESTART_DONE=0
@@ -80,18 +65,14 @@ for i in $(seq 1 25); do
     [ "$RESTART_T" -le 10 ] && RESTART_RESULT=PASS
     RESTART_DONE=1
   fi
-  # once restarted, wait for the swarm to confirm Running + emit its Timer block
   if [ "$RESTART_DONE" -eq 1 ] && grep -q "Total time to heal:" swarm_output.log; then
     break
   fi
   sleep 1
 done
 
-# Fast path used?
 grep -q "FAST PATH activated" swarm_output.log && FASTPATH_RESULT=PASS
 
-# Before-crash: pod must NOT be in OOMKilled/Error/CrashLoop (CPU spike must not
-# have killed it — proactive heal beats the crash).
 NEW_POD=$(pod_name)
 NEW_STATUS=$(kubectl get pods -l app=${APP} --no-headers -o custom-columns=S:.status.phase 2>/dev/null | head -1)
 LASTREASON=$(kubectl get pods -l app=${APP} -o jsonpath='{.items[0].status.containerStatuses[0].lastState.terminated.reason}' 2>/dev/null)
@@ -112,22 +93,20 @@ else
   BEFORE_NOTE="pod status=${NEW_STATUS} lastReason=${LASTREASON:-none}"
 fi
 
-# Total time to heal (prefer the swarm's own Timer line).
 HEAL_LINE=$(grep "Total time to heal:" swarm_output.log | tail -1 | grep -oE '[0-9]+' | head -1)
 [ -n "$HEAL_LINE" ] && HEAL_T="$HEAL_LINE"
 
 echo
-blue "===== SWARM OUTPUT ====="
+blue "SWARM OUTPUT"
 cat swarm_output.log
 
 echo
-blue "===== PROACTIVE HEALING TEST ====="
+blue "PROACTIVE HEALING TEST"
 printf "Alert detected:        %s (%ss)\n" "$ALERT_RESULT" "$ALERT_T"
 printf "Fast path activated:   %s\n" "$FASTPATH_RESULT"
 printf "Pod restarted:         %s (%ss)\n" "$RESTART_RESULT" "$RESTART_T"
 printf "Before crash:          %s (%s)\n" "$BEFORE_RESULT" "$BEFORE_NOTE"
 printf "Total time to heal:    %ss\n" "$HEAL_T"
-blue "=================================="
 
 [ "$ALERT_RESULT" = PASS ] && [ "$FASTPATH_RESULT" = PASS ] \
   && [ "$RESTART_RESULT" = PASS ] && [ "$BEFORE_RESULT" = PASS ]

@@ -63,8 +63,6 @@ export function useSwarmData(): SwarmData {
     setTimeout(() => setToasts((p) => p.filter((t) => t.id !== id)), 5000);
   }, []);
   const dismissToast = useCallback((id: number) => setToasts((p) => p.filter((t) => t.id !== id)), []);
-
-  // react to new events: toasts, heal history, simulating flag
   const ingestEvents = useCallback((incoming: SwarmEvent[]) => {
     for (const e of incoming) {
       if (seenEvt.current.has(e.id)) continue;
@@ -85,8 +83,6 @@ export function useSwarmData(): SwarmData {
       } else if (e.type === 'error' || e.type === 'failed') pushToast('warn', '⚠️', e.content.slice(0, 40));
     }
   }, [pushToast]);
-
-  // /api/config
   useEffect(() => {
     const f = async () => {
       try {
@@ -96,8 +92,6 @@ export function useSwarmData(): SwarmData {
     };
     f(); const i = setInterval(f, 10000); return () => clearInterval(i);
   }, []);
-
-  // /api/status (metrics + history + backup events)
   useEffect(() => {
     const f = async () => {
       try {
@@ -119,8 +113,6 @@ export function useSwarmData(): SwarmData {
     };
     f(); const i = setInterval(f, 2000); return () => clearInterval(i);
   }, [ingestEvents]);
-
-  // SSE live events
   useEffect(() => {
     const connect = () => {
       esRef.current?.close();
@@ -153,16 +145,12 @@ export function useSwarmData(): SwarmData {
       pushToast('warn', '⚠️', 'API offline — start dashboard_api.py');
     }
   }, [pushToast]);
-
-  // derived: pipeline stage from latest event
   const pipeline: PipelineStage = useMemo(() => {
     if (!events.length) return 'idle';
     const last = events[events.length - 1];
     if (last.type === 'healed') return 'healed';
     return STAGE_BY_TYPE[last.type] || 'idle';
   }, [events]);
-
-  // derived: agent states from event stream
   const agents: AgentState = useMemo(() => {
     const a: AgentState = {
       planner: 'idle', evaluator: 'idle', executor: 'idle',
